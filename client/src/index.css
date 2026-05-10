@@ -1,0 +1,21 @@
+:root {
+  --bg-color: #6b719c;
+  --text-color: #ffffff;
+  --accent-color: #4ecca3;
+  --error-color: #e94560;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}

@@ -1,0 +1,104 @@
+.leaderContainer {
+  background: #3b31ff;
+  min-height: calc(100vh - 64px);
+  padding: 40px 0;
+  box-sizing: border-box;
+  color: #fff;
+}
+
+.leaderCard {
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  color: #333;
+  transition: transform 0.3s ease;
+}
+
+.leaderCard h3 {
+  color: #3b31ff;
+  font-weight: 700;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+  text-align: center;
+}
+
+.tableWrapper {
+  border-radius: 25px;
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(59, 49, 255, 0.15);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.leaderTable {
+  border-radius: 10px;
+  overflow: hidden;
+  background: white;
+}
+
+.leaderTable thead {
+  background-color: #3b31ff;
+  color: white;
+}
+
+.leaderTable th {
+  border: none !important;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 15px !important;
+}
+
+.leaderTable td {
+  padding: 12px 15px !important;
+  vertical-align: middle;
+  color: #444;
+}
+
+.diffGroup {
+  gap: 20px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.diffButton {
+  padding: 10px 25px !important;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.activeDiff {
+  transform: scale(1.15) !important;
+  z-index: 2;
+}
+
+.navLink {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.navGroup {
+  gap: 20px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.activeNav {
+  transform: scale(1.15) !important;
+  z-index: 2;
+}

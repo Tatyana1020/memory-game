@@ -1,0 +1,83 @@
+.setupBackground {
+    background: #3b31ff;
+    min-height: calc(100vh - 73px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    overflow: hidden;
+}
+
+.setupCard {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2.5rem;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 500px;
+}
+
+.optionLabel {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0; 
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btnGroupCustom {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+}
+
+.setupSection {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.selectableOption {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+    user-select: none;
+}
+
+.selectableOption:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.selectableOption.active {
+    background: #ffffff;
+    color: #3b31ff;
+    border-color: #ffffff;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.inputWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.helperText {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+}

@@ -1,0 +1,9 @@
+export const ADMIN_ROUTE = '/admin';
+export const LOGIN_ROUTE = '/login';
+export const REGISTRATION_ROUTE = '/registration';
+export const GAME_ROUTE = '/game';
+export const HOME_ROUTE = '/';
+export const LEADERBOARD_ROUTE = '/leaderboard';
+export const PROFILE_ROUTE = '/profile';
+export const LOBBY_ROUTE = '/lobby';
+export const SETUP_ROUTE = '/setup';

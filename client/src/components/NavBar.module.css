@@ -1,0 +1,39 @@
+.logo {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-decoration: none !important;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+    cursor: pointer;
+}
+
+.logo:hover {
+    opacity: 1;
+}
+
+.activeLink {
+    transform: scale(1.15);
+}
+
+.customNavbar {
+    background-color: #3b31ff !important;
+    padding: 12px 0;
+    white-space: nowrap;
+}
+
+.disabledLink {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.usernameWrapper {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+}

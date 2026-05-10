@@ -1,0 +1,79 @@
+.profileContainer {
+    background: #3b31ff; 
+    min-height: calc(100vh - 64px);
+    padding: 40px 0;
+    box-sizing: border-box;
+    color: #fff;
+}
+
+.profileCard {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    color: #333;
+    transition: transform 0.3s ease;
+}
+
+.profileCard:hover {
+    transform: translateY(-5px);
+}
+
+.profileCard h3 {
+    color: #3b31ff;
+    font-weight: 700;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.infoLabel {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.infoValue {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #222;
+}
+
+.resultsTable {
+    border-radius: 10px;
+    overflow: hidden;
+    background: white;
+}
+
+.resultsTable thead {
+    background-color: #3b31ff;
+    color: white;
+}
+
+.resultsTable th {
+    border: none !important;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    padding: 15px !important;
+}
+
+.resultsTable td {
+    padding: 12px 15px !important;
+    vertical-align: middle;
+    color: #444;
+}
+
+.noGamesText {
+    color: #999;
+    font-style: italic;
+    padding: 30px !important;
+}
+
+@media (max-width: 768px) {
+    .profileCard {
+        margin-bottom: 20px;
+    }
+}

@@ -1,0 +1,52 @@
+.authBackground {
+  background-color: #3b31ff;
+  min-height: calc(100vh - 64px);
+  padding: 40px 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.authCard {
+  width: 100%;
+  max-width: 550px;
+  border-radius: 50px !important;
+  border: none !important;
+  box-shadow: 0px 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.authTitle {
+  font-weight: 500;
+  font-size: 2.8rem;
+  color: #000;
+}
+
+.authLabel {
+  color: #b0b0b0;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.authInput {
+  background-color: #f1f1f1 !important;
+  border: none !important;
+  height: 55px !important;
+  border-radius: 15px !important;
+  padding-left: 20px !important;
+}
+
+.forgotPass {
+  color: #3b31ff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.authBtn {
+  width: 100%;
+}
+
+.authFooter a {
+  color: #3b31ff;
+  text-decoration: none;
+  font-weight: bold;
+}
