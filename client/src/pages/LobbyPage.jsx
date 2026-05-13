@@ -78,6 +78,7 @@ const LobbyPage = () => {
     socket.on("settings-updated", (newSettings) => {
       setup.setCardsCount(newSettings.cardsCount);
       setup.setDifficulty(newSettings.difficulty);
+      setup.setShouldSum(newSettings.shouldSum);
     });
 
     socket.on("start-game", (gameData) => {
@@ -108,12 +109,14 @@ const LobbyPage = () => {
   const updateRoomSettings = (type, value) => {
     if (type === "cards") setup.setCardsCount(value);
     if (type === "diff") setup.setDifficulty(value);
+    if (type === "sum") setup.setShouldSum(value);
 
     socket.emit("update-settings", {
       matchId: id,
       settings: {
         cardsCount: type === "cards" ? value : setup.cardsCount,
         difficulty: type === "diff" ? value : setup.difficulty,
+        shouldSum: type === "sum" ? value : setup.shouldSum,
       },
     });
   };
@@ -126,6 +129,7 @@ const LobbyPage = () => {
           cardsCount: setup.cardsCount,
           difficulty: setup.difficulty,
           previewTime: setup.difficultyTime[setup.difficulty],
+          shouldSum: setup.shouldSum,
         },
       });
     }
@@ -192,6 +196,10 @@ const LobbyPage = () => {
                       {setup.difficultyTranslations[setup.difficulty]}
                     </strong>
                   </p>
+                  <p>
+                    Складывать результаты игр?
+                    <strong>{setup.shouldSum ? "Да" : "Нет"}</strong>
+                  </p>
                 </div>
 
                 {isHost ? (
@@ -256,6 +264,18 @@ const LobbyPage = () => {
                 onChange={(e) => updateRoomSettings("cards", e)}
                 className="w-100"
               />
+            </div>
+            <div className={styles.setupSection}>
+              <label className={styles.optionLabelSum}>
+                <input
+                  type="checkbox"
+                  className={styles.checkboxInput}
+                  checked={setup.shouldSum}
+                  onChange={(e) => updateRoomSettings("sum", e.target.checked)}
+                />
+                <span className={styles.checkboxCustom}></span>
+                Складывать результаты
+              </label>
             </div>
           </Modal.Body>
           <Modal.Footer>

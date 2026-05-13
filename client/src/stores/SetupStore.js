@@ -6,6 +6,7 @@ export default class UserStore {
     this._playersCount = 1;
     this._cardsCount = 4;
     this._difficulty = "Easy";
+    this._shouldSum = false;
     this._difficultyTranslations = {
       Easy: "Легко",
       Medium: "Средне",
@@ -17,6 +18,10 @@ export default class UserStore {
       Hard: 0,
     };
     makeAutoObservable(this);
+  }
+
+  setShouldSum(bool) {
+    this._shouldSum = bool;
   }
 
   setPlayers(arr) {
@@ -41,8 +46,19 @@ export default class UserStore {
     this._players = Array.from({ length: players }, (e, index) => ({
       id: index,
       winPair: 0,
+      sessionWinPair: 0,
       winner: false,
     }));
+  }
+
+  addWinPair(playerId) {
+    const player = this._players.find((p) => p.id === playerId);
+    if (player) {
+      player.winPair += 1;
+      if (this._shouldSum) {
+        player.sessionWinPair += 1;
+      }
+    }
   }
 
   resetSettings() {
@@ -50,11 +66,13 @@ export default class UserStore {
     this._playersCount = 1;
     this._cardsCount = 4;
     this._difficulty = "Easy";
+    this._shouldSum = false;
   }
 
   resetPlayersScore() {
     this._players = this._players.map((player) => ({
       ...player,
+      sessionWinPair: this._shouldSum ? player.sessionWinPair : 0,
       winPair: 0,
       winner: false,
     }));
@@ -64,6 +82,14 @@ export default class UserStore {
     if (this._cardsCount < 100) {
       this._cardsCount += 2;
     }
+  }
+
+  get shouldSum() {
+    return this._shouldSum;
+  }
+
+  get sessionScore() {
+    return this._players.length > 0 ? this._players[0].sessionWinPair : 0;
   }
 
   get difficultyTranslations() {

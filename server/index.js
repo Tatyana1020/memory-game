@@ -57,29 +57,86 @@ io.on("connection", (socket) => {
     socket.username = username;
     socket.dbUserId = userId;
 
+    if (!roomsState[matchId]) {
+      roomsState[matchId] = {
+        users: [],
+        cardsCount: 4,
+        difficulty: "Easy",
+        shouldSum: false,
+        isChecking: false,
+        isFinished: false,
+      };
+    }
+
+    const room = roomsState[matchId];
     const users = getUsersInRoom(matchId);
-    io.to(matchId).emit("room-info", { users });
+
+    room.users = users.map((u) => {
+      const prev = room.users.find((p) => String(p.id) === String(u.id));
+
+      return {
+        id: u.id,
+        username: u.username,
+        winPair: 0,
+        sessionWinPair: prev?.sessionWinPair || 0,
+      };
+    });
+
+    if (!room.activePlayerId) {
+      room.activePlayerId = room.users[0]?.id;
+    }
+
+    io.to(matchId).emit("room-info", { users: room.users });
   });
 
   socket.on("update-settings", ({ matchId, settings }) => {
-    socket.to(matchId).emit("settings-updated", settings);
+    if (!roomsState[matchId]) {
+      roomsState[matchId] = {
+        users: [],
+        isChecking: false,
+        isFinished: false,
+      };
+    }
+
+    roomsState[matchId] = {
+      ...roomsState[matchId],
+      cardsCount: settings.cardsCount,
+      difficulty: settings.difficulty,
+      shouldSum: settings.shouldSum,
+    };
+
+    io.to(matchId).emit("settings-updated", {
+      cardsCount: settings.cardsCount,
+      difficulty: settings.difficulty,
+      shouldSum: settings.shouldSum,
+    });
   });
 
   socket.on("get-game-state", ({ matchId }) => {
     const room = roomsState[matchId];
-    if (room) {
+    if (room && room.board) {
       socket.emit("game-state", {
         board: room.board,
         activePlayerId: room.activePlayerId,
         users: room.users,
+        shouldSum: room.shouldSum,
+        previewTime: room.preview_time,
+      });
+    } else if (room) {
+      socket.emit("game-state", {
+        board: [],
+        users: room.users || [],
+        shouldSum: room.shouldSum || false,
+        previewTime: 0,
       });
     }
   });
 
   socket.on("host-start-game", async ({ matchId, settings }) => {
-    delete roomsState[matchId];
+    const previousRoom = roomsState[matchId];
+    const previousUsers = previousRoom?.users || [];
 
-    const { cardsCount, difficulty, previewTime } = settings;
+    const { cardsCount, difficulty, previewTime, shouldSum } = settings;
 
     if (getUsersInRoom(matchId).length === 0) {
       return;
@@ -96,10 +153,15 @@ io.on("connection", (socket) => {
       isMatched: false,
     }));
 
-    const users = getUsersInRoom(matchId).map((u) => ({
-      ...u,
-      winPair: 0,
-    }));
+    const users = getUsersInRoom(matchId).map((u) => {
+      const prev = previousUsers.find((p) => String(p.id) === String(u.id));
+
+      return {
+        ...u,
+        winPair: 0,
+        sessionWinPair: shouldSum ? prev?.sessionWinPair || 0 : 0,
+      };
+    });
 
     const match = await models.Matches.create({
       game_mode: "online",
@@ -117,6 +179,8 @@ io.on("connection", (socket) => {
       activePlayerId: users[0]?.id,
       difficulty: difficulty,
       preview_time: previewTime,
+      shouldSum: shouldSum,
+      cardsCount: cardsCount,
       isChecking: false,
       isFinished: false,
     };
@@ -127,6 +191,7 @@ io.on("connection", (socket) => {
       activePlayerId: users[0]?.id,
       difficulty: difficulty,
       previewTime: previewTime,
+      shouldSum: shouldSum,
       users: roomsState[matchId].users,
     });
   });
@@ -135,6 +200,10 @@ io.on("connection", (socket) => {
     const room = roomsState[matchId];
 
     if (!room || room.isChecking || room.isFinished) return;
+
+    if (!room.activePlayerId) {
+      room.activePlayerId = room.users?.[0]?.id;
+    }
 
     const isHisTurn = String(room.activePlayerId) === String(socket.dbUserId);
 
@@ -168,6 +237,7 @@ io.on("connection", (socket) => {
       room.isChecking = true;
       const [first, second] = openedCards;
       const currentGameId = room.gameId;
+      const playerId = socket.dbUserId;
 
       setTimeout(async () => {
         const latestRoom = roomsState[matchId];
@@ -189,11 +259,13 @@ io.on("connection", (socket) => {
               : card,
           );
 
-          room.users = room.users.map((u) =>
-            String(u.id) === String(socket.dbUserId)
-              ? { ...u, winPair: u.winPair + 1 }
-              : u,
-          );
+          room.users = room.users.map((u) => {
+            if (String(u.id) === String(playerId)) {
+              const newWinPair = u.winPair + 1;
+              return { ...u, winPair: newWinPair };
+            }
+            return u;
+          });
         } else {
           room.board = room.board.map((card) =>
             card.id === first.id || card.id === second.id
@@ -234,8 +306,15 @@ io.on("connection", (socket) => {
           );
 
           for (const player of room.users) {
+            const score = player.winPair || 0;
+
+            if (room.shouldSum) {
+              player.sessionWinPair =
+                (player.sessionWinPair || 0) + player.winPair;
+            }
+
             await models.Results.create({
-              score: player.winPair,
+              score,
               cards_count: room.board.length,
               difficulty: room.difficulty,
               preview_time: room.preview_time,
@@ -243,12 +322,17 @@ io.on("connection", (socket) => {
               matchId: room.dbMatchId,
             });
           }
+
+          const finalUsersState = room.users.map((u) => ({ ...u }));
+
           io.to(matchId).emit("game-over", {
-            users: room.users,
+            users: finalUsersState,
             board: room.board,
             winnerId: winner.id,
             dbMatchId: room.dbMatchId,
+            shouldSum: room.shouldSum,
           });
+          room.users.forEach((u) => (u.winPair = 0));
         } else {
           io.to(matchId).emit("board-updated", {
             board: room.board,
@@ -290,56 +374,6 @@ io.on("connection", (socket) => {
 
     if (users.length === 0) {
       delete roomsState[matchId];
-    }
-  });
-
-  socket.on("match-found", async ({ matchId, symbol }) => {
-    const room = roomsState[matchId];
-    if (!room) return;
-    room.board = room.board.map((card) =>
-      card.symbol === symbol
-        ? { ...card, isMatched: true, isFlipped: true }
-        : card,
-    );
-
-    room.users = room.users.map((u) =>
-      String(u.id) === String(socket.dbUserId)
-        ? { ...u, winPair: u.winPair + 1 }
-        : u,
-    );
-
-    room.isChecking = false;
-
-    const totalMatched = room.users.reduce((acc, u) => acc + u.winPair, 0);
-    const totalPairsNeeded = room.board.length / 2;
-
-    io.to(matchId).emit("match-confirmed", symbol);
-    io.to(matchId).emit("room-info", { users: room.users });
-
-    if (totalMatched === totalPairsNeeded) {
-      const winner = room.users.reduce((prev, current) =>
-        prev.winPair > current.winPair ? prev : current,
-      );
-
-      await models.Matches.update(
-        { status: "finished", winner_id: winner.id },
-        { where: { id: room.dbMatchId } },
-      );
-
-      for (const player of room.users) {
-        await models.Results.create({
-          score: player.winPair,
-          cards_count: room.board.length,
-          difficulty: room.difficulty,
-          preview_time: room.preview_time,
-          userId: player.id,
-          matchId: room.dbMatchId,
-        });
-      }
-
-      io.to(matchId).emit("game-over", { users: room.users });
-
-      room.isFinished = true;
     }
   });
 

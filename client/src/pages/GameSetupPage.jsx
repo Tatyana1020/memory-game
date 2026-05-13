@@ -71,6 +71,20 @@ const GameSetupPage = () => {
               />
             </div>
           </div>
+
+          <div className={styles.setupSection}>
+            <label className={styles.optionLabelSum}>
+              <input
+                type="checkbox"
+                className={styles.checkboxInput}
+                checked={setup.shouldSum}
+                onChange={(e) => setup.setShouldSum(e.target.checked)}
+              />
+              <span className={styles.checkboxCustom}></span>
+              Складывать результаты
+            </label>
+          </div>
+
           <div className={styles.setupSection}>
             <label className={styles.optionLabel}>Сложность игры</label>
             <div className={styles.btnGroupCustom}>

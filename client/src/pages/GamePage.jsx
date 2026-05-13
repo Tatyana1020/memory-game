@@ -40,6 +40,7 @@ const GamePage = () => {
   const [isAborted, setIsAborted] = useState(false);
   const [abortedBy, setAbortedBy] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
+  const [isSocketConnected, setIsSocketConnected] = useState(socket.connected);
   const previewStarted = useRef(false);
 
   const isOnline = location.state?.isOnline || false;
@@ -72,7 +73,7 @@ const GamePage = () => {
 
         await createResult({
           matchId: 1,
-          score: currentPlayer.winPair,
+          score: winPair,
           cards_count: setup.cardsCount,
           difficulty: setup.difficulty,
           preview_time: setup.difficultyTime[setup.difficulty],
@@ -83,6 +84,26 @@ const GamePage = () => {
       }
     }
   };
+
+  useEffect(() => {
+    if (isOnline) {
+      const handleConnect = () => {
+        setIsSocketConnected(true);
+        socket.emit("get-game-state", { matchId });
+      };
+      const handleDisconnect = () => setIsSocketConnected(false);
+
+      socket.on("connect", handleConnect);
+      socket.on("disconnect", handleDisconnect);
+      socket.on("connect_error", handleDisconnect);
+
+      return () => {
+        socket.off("connect", handleConnect);
+        socket.off("disconnect", handleDisconnect);
+        socket.off("connect_error", handleDisconnect);
+      };
+    }
+  }, [isOnline]);
 
   useEffect(() => {
     setGameStarted(false);
@@ -189,6 +210,7 @@ const GamePage = () => {
         setRoomUsers(data.users);
 
         setup.setDifficulty(data.difficulty);
+        setup.setShouldSum(data.shouldSum);
 
         const time = data.previewTime ?? setup.difficultyTime[data.difficulty];
 
@@ -208,8 +230,40 @@ const GamePage = () => {
       const onGameState = (data) => {
         setCards(data.board);
         setActivePlayerId(data.activePlayerId);
-        setRoomUsers(data.users);
         setPreviewTime(data.previewTime);
+
+        if (data.shouldSum !== undefined) {
+          setup.setShouldSum(data.shouldSum);
+        }
+
+        if (data.users) {
+          const currentLocalPlayers = setup.players;
+
+          const updatedUsers = data.users.map((serverPlayer) => {
+            const localPlayer = currentLocalPlayers.find(
+              (p) => p.id === serverPlayer.id,
+            );
+
+            let sessionScore = serverPlayer.winPair || 0;
+
+            if (localPlayer && setup.shouldSum) {
+              const diff = serverPlayer.winPair - localPlayer.winPair;
+              sessionScore =
+                diff > 0
+                  ? (localPlayer.sessionWinPair || 0) + diff
+                  : localPlayer.sessionWinPair || 0;
+            }
+
+            return {
+              ...serverPlayer,
+              sessionWinPair: sessionScore,
+            };
+          });
+
+          setup.setPlayers(updatedUsers);
+
+          setRoomUsers(updatedUsers);
+        }
 
         const isNewGame = data.board.every((card) => !card.isMatched);
         if (isNewGame) {
@@ -217,7 +271,12 @@ const GamePage = () => {
         }
       };
 
-      const onGameOver = ({ users }) => {
+      const onGameOver = ({ users, shouldSum }) => {
+        if (shouldSum !== undefined) {
+          setup.setShouldSum(shouldSum);
+        }
+        setup.setPlayers(users);
+
         setRoomUsers(users);
         setIsWon(true);
         saveGameResult();
@@ -273,6 +332,7 @@ const GamePage = () => {
             cardsCount: setup.cardsCount,
             difficulty: setup.difficulty,
             previewTime: timeValue,
+            shouldSum: setup.shouldSum,
           },
         });
       }
@@ -339,12 +399,6 @@ const GamePage = () => {
     if (clickedCard.isFlipped || clickedCard.isMatched) return;
 
     if (isOnline) {
-      // setCards((prev) =>
-      //   prev.map((card) =>
-      //     card.id === clickedCard.id ? { ...card, isFlipped: true } : card,
-      //   ),
-      // );
-
       socket.emit("card-flipped", { matchId, cardId: clickedCard.id });
       return;
     }
@@ -365,6 +419,9 @@ const GamePage = () => {
   const checkMatch = (secondCard) => {
     setDisabled(true);
     if (firstCard.symbol === secondCard.symbol) {
+      if (!isOnline) {
+        setup.addWinPair(setup.players[currentPlayer].id);
+      }
       setTimeout(() => {
         setCards((prev) =>
           prev.map((card) =>
@@ -373,16 +430,6 @@ const GamePage = () => {
               : card,
           ),
         );
-
-        if (isOnline && user.user.id === activePlayerId) {
-          socket.emit("match-found", { matchId, symbol: secondCard.symbol });
-        } else {
-          setup.setPlayers(
-            setup.players.map((e) =>
-              e.id === currentPlayer ? { ...e, winPair: e.winPair + 1 } : e,
-            ),
-          );
-        }
 
         setFirstCard(null);
         setDisabled(false);
@@ -431,15 +478,17 @@ const GamePage = () => {
 
   const getWinnerText = () => {
     if (isOnline) {
-      const maxPairs = Math.max(...roomUsers.map((u) => u.winPair || 0));
+      const getScore = (u) => (setup.shouldSum ? u.sessionWinPair : u.winPair);
+      const maxPairs = Math.max(...roomUsers.map(getScore));
       const winners = roomUsers.filter(
-        (u) => (u.winPair || 0) === maxPairs && maxPairs > 0,
+        (u) => getScore(u) === maxPairs && maxPairs > 0,
       );
 
       if (winners.length > 1) return "Ничья!";
       const winner = winners[0];
-      if (winner?.id === user.user.id) return "ВЫ ПОБЕДИЛИ!";
-      return `Победил ${winner?.username || "Игрок"}`;
+      return winner?.id === user.user.id
+        ? "ВЫ ПОБЕДИЛИ!"
+        : `Победил ${winner?.username || "Игрок"}`;
     }
 
     if (setup.players.length === 1) {
@@ -465,6 +514,34 @@ const GamePage = () => {
 
   return (
     <div className={classes.app}>
+      {!isSocketConnected && isOnline && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            background: "#ff4d4f",
+            color: "white",
+            textAlign: "center",
+            padding: "10px",
+            zIndex: 9999,
+          }}
+        >
+          ⚠️ Проблема со связью.
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              marginLeft: "15px",
+              borderRadius: "5px",
+              border: "none",
+              padding: "2px 10px",
+            }}
+          >
+            Обновить игру
+          </button>
+        </div>
+      )}
       {!isWon && (
         <>
           {isOnline ? (
@@ -537,31 +614,45 @@ const GamePage = () => {
               <div className="p-3 rounded">
                 {isOnline ? (
                   <>
-                    <div className="fw-bold mb-2">Кол-во найденных пар:</div>
-                    {roomUsers.map((u) => (
+                    <div className="fw-bold mb-2">
+                      {setup.shouldSum
+                        ? "Общий счет: "
+                        : "Кол-во найденных пар: "}
+                    </div>
+                    {roomUsers.map((u, index) => (
                       <div
-                        key={u.id}
+                        key={`${u.id}-${index}`}
                         className={
                           u.id === activePlayerId ? "fw-bold text-primary" : ""
                         }
                       >
-                        {u.id === user.user.id ? "Вы" : u.username}:{" "}
-                        {u.winPair || 0}{" "}
+                        {u.id === user.user.id ? "Вы" : u.username}:
+                        {setup.shouldSum ? u.sessionWinPair : u.winPair}
                       </div>
                     ))}
                   </>
                 ) : setup.players.length > 1 ? (
-                  setup.players.map((p) => (
-                    <div
-                      key={p.id}
-                      className={p.winner ? "fw-bold text-primary" : ""}
-                    >
-                      Игрок {p.id + 1}: {p.winPair}
+                  <>
+                    <div className="fw-bold mb-2">
+                      {setup.shouldSum
+                        ? "Общий счет: "
+                        : "Кол-во найденных пар: "}
                     </div>
-                  ))
+                    {setup.players.map((p) => (
+                      <div
+                        key={p.id}
+                        className={p.winner ? "fw-bold text-primary" : ""}
+                      >
+                        Игрок {p.id + 1}:{" "}
+                        {setup.shouldSum ? p.sessionWinPair : p.winPair}
+                      </div>
+                    ))}
+                  </>
                 ) : (
                   <div className="fs-5">
-                    Кол-во найденных пар: {setup.players[0].winPair}
+                    {setup.shouldSum
+                      ? `Общий счет: ${setup.sessionScore}`
+                      : `Кол-во найденных пар: ${winPair}`}
                   </div>
                 )}
               </div>
@@ -577,6 +668,7 @@ const GamePage = () => {
               onClick={() => {
                 socket.emit("leave-room", { matchId });
                 navigate(HOME_ROUTE);
+                setup.resetPlayersScore();
                 setup.resetSettings();
               }}
             >
@@ -627,6 +719,7 @@ const GamePage = () => {
                     socket.emit("leave-room", { matchId });
                   }
                   navigate(HOME_ROUTE);
+                  setup.resetPlayersScore();
                   setup.resetSettings();
                 }}
               >
