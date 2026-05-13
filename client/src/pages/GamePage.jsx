@@ -279,6 +279,12 @@ const GamePage = () => {
       return;
     }
 
+    const isSinglePlayer = setup.players.length === 1;
+
+    if (isWon && isSinglePlayer) {
+      setup.incrementCardsCount();
+    }
+
     previewStarted.current = false;
     setCards([]);
     setRoomUsers([]);
@@ -596,14 +602,22 @@ const GamePage = () => {
                   )}
                 </>
               ) : (
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-100 mb-2"
-                  onClick={startNewGame}
-                >
-                  Сыграть ещё раз
-                </Button>
+                <>
+                  {setup.players.length === 1 && (
+                    <div className="mt-2 text-center">
+                      Следующая игра: <strong>{setup.cardsCount + 2}</strong>{" "}
+                      карточек
+                    </div>
+                  )}
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="w-100 mb-2"
+                    onClick={startNewGame}
+                  >
+                    Сыграть ещё раз
+                  </Button>
+                </>
               )}
               <Button
                 variant="outline-secondary"

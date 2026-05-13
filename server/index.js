@@ -157,16 +157,6 @@ io.on("connection", (socket) => {
 
     const openedCards = room.board.filter((c) => c.isFlipped && !c.isMatched);
 
-    // if (openedCards.length < 2) {
-    //   io.to(matchId).emit("board-updated", {
-    //     board: room.board,
-    //     activePlayerId: room.activePlayerId,
-    //     users: room.users,
-    //     isChecking: false,
-    //   });
-    //   return;
-    // }
-
     io.to(matchId).emit("board-updated", {
       board: room.board,
       activePlayerId: room.activePlayerId,

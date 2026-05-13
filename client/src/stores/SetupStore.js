@@ -60,6 +60,12 @@ export default class UserStore {
     }));
   }
 
+  incrementCardsCount() {
+    if (this._cardsCount < 100) {
+      this._cardsCount += 2;
+    }
+  }
+
   get difficultyTranslations() {
     return this._difficultyTranslations;
   }
