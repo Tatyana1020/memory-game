@@ -262,7 +262,10 @@ io.on("connection", (socket) => {
           room.users = room.users.map((u) => {
             if (String(u.id) === String(playerId)) {
               const newWinPair = u.winPair + 1;
-              return { ...u, winPair: newWinPair };
+              const newSessionWinPair = room.shouldSum
+                ? (u.sessionWinPair || 0) + 1
+                : u.sessionWinPair || 0;
+              return { ...u, winPair: newWinPair, sessionWinPair: newSessionWinPair };
             }
             return u;
           });
@@ -307,11 +310,6 @@ io.on("connection", (socket) => {
 
           for (const player of room.users) {
             const score = player.winPair || 0;
-
-            if (room.shouldSum) {
-              player.sessionWinPair =
-                (player.sessionWinPair || 0) + player.winPair;
-            }
 
             await models.Results.create({
               score,

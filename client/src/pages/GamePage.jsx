@@ -237,26 +237,11 @@ const GamePage = () => {
         }
 
         if (data.users) {
-          const currentLocalPlayers = setup.players;
 
           const updatedUsers = data.users.map((serverPlayer) => {
-            const localPlayer = currentLocalPlayers.find(
-              (p) => p.id === serverPlayer.id,
-            );
-
-            let sessionScore = serverPlayer.winPair || 0;
-
-            if (localPlayer && setup.shouldSum) {
-              const diff = serverPlayer.winPair - localPlayer.winPair;
-              sessionScore =
-                diff > 0
-                  ? (localPlayer.sessionWinPair || 0) + diff
-                  : localPlayer.sessionWinPair || 0;
-            }
-
             return {
               ...serverPlayer,
-              sessionWinPair: sessionScore,
+              sessionWinPair: serverPlayer.sessionWinPair,
             };
           });
 
